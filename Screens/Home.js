@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, {useState, useEffect, useContext, useRef} from 'react';
 import {
   StyleSheet,
   View,
@@ -9,24 +9,26 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { Alert } from 'react-native';
+import {Alert} from 'react-native';
 import Swiper from 'react-native-deck-swiper';
 // Replace this with the actual path to your CacheImage component
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
+import {LinearGradient} from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
-import { Feather } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import {Feather} from '@expo/vector-icons';
+import {useNavigation} from '@react-navigation/native';
 import Theme from '../Theme';
 import Header from '../components/utils/Header';
-import { firebase, auth } from '../firebase';
+import {firebase, auth} from '../firebase';
 import CacheImage from './CacheImage';
-import { CardContext } from './CardContext';
+import {CardContext} from './CardContext';
 import LoadingScreen from './LoadingScreen';
-import  mainLogoIcon from '../Assets/mainlogo.png'
+import mainLogoIcon from '../Assets/mainlogo.png';
 import backArrowIcon from '../Assets/logout.png';
 import mapIcon from '../Assets/icon.png';
+import * as Location from 'expo-location'; // Make sure to install expo-location
+
 const windowWidth = Dimensions.get('window').width;
 const windowHeight = Dimensions.get('window').height;
 
@@ -36,8 +38,9 @@ const cardHeight = windowHeight / 1.8;
 const db = firebase.firestore();
 
 export default function Home() {
+  console.log('dasLLLLLss');
   const [data, setData] = useState([]);
-  const { handleSwipe } = useContext(CardContext);
+  const {handleSwipe} = useContext(CardContext);
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
@@ -45,7 +48,12 @@ export default function Home() {
   const swiperRef = useRef(null);
   const navigation = useNavigation();
   const lottieRef = useRef(null);
-
+  const [region, setRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  });
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(user => {
       if (user && user.uid) {
@@ -60,18 +68,33 @@ export default function Home() {
   }, [selectedCategory]);
 
   useEffect(() => {
+    (async () => {
+      const {status} = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        // Get the current location
+        const location = await Location.getCurrentPositionAsync({});
+        setRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
     registerForPushNotificationsAsync();
   }, []);
 
   async function registerForPushNotificationsAsync() {
     let token;
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    const {status: existingStatus} = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
     if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
+      const {status} = await Notifications.requestPermissionsAsync();
       finalStatus = status;
     }
-
     if (finalStatus !== 'granted') {
       console.log('Failed to get push token for push notification!');
       return;
@@ -135,10 +158,10 @@ export default function Home() {
         const query =
           category !== 'All' && category !== 'Friends'
             ? db
-              .collection('users')
-              .doc(userId)
-              .collection('clothes')
-              .where('category', '==', category)
+                .collection('users')
+                .doc(userId)
+                .collection('clothes')
+                .where('category', '==', category)
             : db.collection('users').doc(userId).collection('clothes');
         const clothesSnapshot = await query.get();
 
@@ -146,7 +169,10 @@ export default function Home() {
         const userSnapshot = await db.collection('users').doc(userId).get();
         const userName = userSnapshot.data().name;
         const userProfilePicture = userSnapshot.data().profile_picture;
-        console.log("////////////////////////............", userProfilePicture)
+        console.log(
+          '////////////////////////.........///////...',
+          userProfilePicture,
+        );
 
         const userClothesData = [];
         clothesSnapshot.forEach(clothesDoc => {
@@ -188,7 +214,7 @@ export default function Home() {
         sound: 'default',
         title: title,
         body: body,
-        data: { someData: 'goes here' },
+        data: {someData: 'goes here'},
       };
 
       const response = await fetch('https://exp.host/--/api/v2/push/send', {
@@ -218,7 +244,7 @@ export default function Home() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ ids: [ticketId] }),
+          body: JSON.stringify({ids: [ticketId]}),
         },
       );
 
@@ -288,7 +314,10 @@ export default function Home() {
       const chatRef = db.collection('chats').doc(chatId);
       const currentUser = await db.collection('users').doc(currentUserId).get();
       const currentUserData = currentUser.data();
-      console.log("==========currentUsercurrentUser==========>", currentUserData.profile_picture)
+      console.log(
+        '==========currentUsercurrentUser==========>',
+        currentUserData.profile_picture,
+      );
       const currentUserDisplayName = currentUserData.name || 'Unknown';
 
       const imageOwnerUser = await db.collection('users').doc(ownerId).get();
@@ -306,7 +335,6 @@ export default function Home() {
       }
       const userProfilePicture = currentUser.profile_picture;
 
-
       // console.log("============jkhjkhk=====>",userProfilePicture)
       await chatRef.set({
         users: [currentUserId, ownerId],
@@ -314,14 +342,16 @@ export default function Home() {
         ownerName: imageOwnerDisplayName,
         imageUrl: imageUrl,
         senderName: currentUserDisplayName,
-        senderProfile: currentUserData?.profile_picture ? currentUserData.profile_picture : "unknown",
+        senderProfile: currentUserData?.profile_picture
+          ? currentUserData.profile_picture
+          : 'unknown',
         LastMessageUser: currentUserId,
         lastMessage: '',
         lastMessageRead: false,
         cat: swipedCard.category,
         priceProduct: swipedCard.price,
         sizeProduct: swipedCard.size,
-        ownerProfilePicture: swipedCard.ownerProfilePicture
+        ownerProfilePicture: swipedCard.ownerProfilePicture,
       });
 
       await chatRef.collection('messages').add({
@@ -346,8 +376,10 @@ export default function Home() {
 
   const navigateToOwnerAccount = (ownerId, chatId) => {
     console.log('OWNERID', ownerId);
-    navigation.navigate('NonEditAccount', { ownerId, chatId });
+    navigation.navigate('NonEditAccount', {ownerId, chatId});
   };
+  console.log('fgfggggggggggggggggggg');
+  console.log(region, 'origin');
 
   return (
     <View style={styles.container}>
@@ -357,14 +389,14 @@ export default function Home() {
         mainLogoIcon={mainLogoIcon}
         backArrowIcon={backArrowIcon}
         mapIcon={mapIcon}
-      // rightIcon={'menu'}
-      // rightHandlePress={() => setMenuVisible(!menuVisible)}
+        // rightIcon={'menu'}
+        // rightHandlePress={() => setMenuVisible(!menuVisible)}
       />
       <View style={styles.body}>
-        {(
+        {
           <View
             style={styles.dismissMenuArea}
-          // onPress={() => setMenuVisible(false)}
+            // onPress={() => setMenuVisible(false)}
           >
             {/* <View style={styles.dropdownMenu}> */}
             {/* <Text style={[styles.menuItem, styles.menuItemTitle]}>
@@ -372,7 +404,10 @@ export default function Home() {
               </Text> */}
             {/* <View style={styles.divider} /> */}
             <View>
-              <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+              <ScrollView
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+              >
                 {[
                   // 'All',
                   "Men's Shirt",
@@ -388,12 +423,17 @@ export default function Home() {
                   <TouchableOpacity
                     onPress={() => onCategorySelect(category)}
                     style={
-                      selectedCategory === category ? styles.lastMenuItem : styles.dropdownMenuBtn
+                      selectedCategory === category
+                        ? styles.lastMenuItem
+                        : styles.dropdownMenuBtn
                     }
-                    key={category}>
+                    key={category}
+                  >
                     <Text
                       style={
-                        selectedCategory === category ? styles.lastMenuItemTxt : styles.menuItem
+                        selectedCategory === category
+                          ? styles.lastMenuItemTxt
+                          : styles.menuItem
                       }
                     >
                       {category}
@@ -404,8 +444,7 @@ export default function Home() {
             </View>
             {/* </View> */}
           </View>
-        )}
-
+        }
 
         {data.length > 0 && !allCardsSwiped ? (
           <>
@@ -413,7 +452,7 @@ export default function Home() {
               key={selectedCategory}
               cards={data}
               ref={swiperRef}
-              containerStyle={{ backgroundColor: '#f7f7f7', marginTop: null }}
+              containerStyle={{backgroundColor: '#f7f7f7', marginTop: null}}
               renderCard={(card, cardIndex) => {
                 if (!card || !card.images || card.images.length === 0)
                   return null;
@@ -424,17 +463,18 @@ export default function Home() {
                         <ActivityIndicator
                           size="large"
                           color="#0000ff"
-                          style={{ transform: [{ scale: 2 }] }}
+                          style={{transform: [{scale: 2}]}}
                         />
                       </View>
                     )}
 
                     <View style={styles.userOverlay}>
                       <TouchableOpacity
-                        onPress={() => navigateToOwnerAccount(card.ownerId)}>
+                        onPress={() => navigateToOwnerAccount(card.ownerId)}
+                      >
                         <View style={styles.userInfoBox}>
                           <Image
-                            source={{ uri: card.ownerProfilePicture }}
+                            source={{uri: card.ownerProfilePicture}}
                             style={styles.userImage}
                           />
                           <Text style={styles.userName}>{card.ownerName}</Text>
@@ -471,21 +511,23 @@ export default function Home() {
                               }
                             }),
                           );
-                        }}>
+                        }}
+                      >
                         <CacheImage
                           style={styles.clothesImage}
                           uri={card.images[card.currImageIndex]}
                         />
                         <LinearGradient
                           colors={['transparent', 'rgba(0,0,0,1)']}
-                          style={styles.gradientOverlay}>
-                          <View style={[Theme.align, { marginVertical: 3 }]}>
+                          style={styles.gradientOverlay}
+                        >
+                          <View style={[Theme.align, {marginVertical: 3}]}>
                             <Feather name="grid" size={12} color="white" />
                             <Text style={styles.cardTextSub}>
                               {card.category || 'Unknown'}
                             </Text>
                           </View>
-                          <View style={[Theme.align, { marginVertical: 3 }]}>
+                          <View style={[Theme.align, {marginVertical: 3}]}>
                             <Feather
                               name="maximize-2"
                               size={12}
@@ -517,24 +559,26 @@ export default function Home() {
                         style={[
                           styles.button,
                           styles.thumbsUpButton,
-                          { backgroundColor: 'white' },
+                          {backgroundColor: 'white'},
                         ]}
-                        onPress={() => swiperRef.current.swipeRight()}>
+                        onPress={() => swiperRef.current.swipeRight()}
+                      >
                         <Feather name="thumbs-up" size={20} color="green" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={[
                           styles.button,
-                          { backgroundColor: 'white', marginTop: 10 },
+                          {backgroundColor: 'white', marginTop: 10},
                         ]}
-                        onPress={() => swiperRef.current.swipeLeft()}>
+                        onPress={() => swiperRef.current.swipeLeft()}
+                      >
                         <Feather name="thumbs-down" size={20} color="red" />
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
                           styles.button,
-                          { backgroundColor: 'white', marginTop: 10 },
+                          {backgroundColor: 'white', marginTop: 10},
                         ]}
                         onPress={() => {
                           Alert.alert(
@@ -558,9 +602,10 @@ export default function Home() {
                                 },
                               },
                             ],
-                            { cancelable: false },
+                            {cancelable: false},
                           );
-                        }}>
+                        }}
+                      >
                         <MaterialIcons name="flag" size={20} color="orange" />
                       </TouchableOpacity>
                     </View>
@@ -680,7 +725,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowRadius: 10,
     marginRight: 10,
     marginTop: 9, // Adjust this value as needed to align the thumbs-up icon
@@ -701,7 +746,6 @@ const styles = StyleSheet.create({
 
   scrollView: {
     maxHeight: 30, // Set a maximum height for the ScrollView
-
   },
   userInfoBox: {
     padding: 12,
@@ -792,15 +836,15 @@ const styles = StyleSheet.create({
   },
   dropdownMenuBtn: {
     fontSize: 16,
-    borderColor: "#808080",
+    borderColor: '#808080',
     borderWidth: 2,
     borderRadius: 15,
     padding: 7,
     elevation: 5,
     marginHorizontal: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center"
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   menuItem: {
     fontSize: 14,
@@ -814,9 +858,9 @@ const styles = StyleSheet.create({
     padding: 9,
     elevation: 5,
     marginHorizontal: 5,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center"
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
   },
   lastMenuItemTxt: {
     fontSize: 14,
@@ -826,7 +870,6 @@ const styles = StyleSheet.create({
   menuItemTitle: {
     fontWeight: 'bold',
     fontSize: 16,
-
   },
   divider: {
     height: 1,
@@ -843,7 +886,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEFEFE',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowRadius: 10,
   },
   clothesImage: {
@@ -872,7 +915,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     shadowRadius: 10,
     marginRight: 10,
   },
