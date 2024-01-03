@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 3.15.1"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleId": "vynethrift@gmail.com",
+        "ascAppId": "6451322476",
+        "appleTeamId": "UULD8N9RXH"
+      }
+    }
+  }
+}
